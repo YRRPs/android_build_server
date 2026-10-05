@@ -2,6 +2,7 @@ name: ${COMPOSE_PROJECT_NAME:-android-build-server}
 
 services:
   builder:
+    image: ${BUILDER_IMAGE:-ghcr.io/yim-s-riced-rom-project/android-build-server:main}
     build:
       context: .
       args:
@@ -19,9 +20,14 @@ services:
       CCACHE_MAXSIZE: ${CCACHE_MAXSIZE:-100G}
       CCACHE_NOCOMPRESS: "true"
       USE_CCACHE: "1"
+      OTA_PUBLIC_BASE_URL: ${OTA_PUBLIC_BASE_URL:-}
+      OTA_BASE_IMAGE_REF: ${OTA_BASE_IMAGE_REF:-ghcr.io/yim-s-riced-rom-project/ota-server:main}
+      OTA_NETWORK: ${OTA_NETWORK:-proxy-net}
     volumes:
       - ${ANDROID_WORKSPACE_PATH:-./workspace}:/opt/android
       - ${CCACHE_PATH:-./ccache}:/ccache
+      - ${YRRP_PROJECT_PATH:?Set YRRP_PROJECT_PATH}:/opt/yrrp/project:ro
+      - /var/run/docker.sock:/var/run/docker.sock
       - ssh-host-keys:/etc/ssh/host-keys
     tmpfs:
       - /run

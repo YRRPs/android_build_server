@@ -1,12 +1,14 @@
 # Android build server
 
-Persistent Debian-based Android and LineageOS build environment with key-only SSH access. Source checkout, ccache, and SSH host identity survive container recreation.
+Persistent Debian-based Android and LineageOS build environment with key-only SSH access. Source checkout, ccache, SSH identity, signing workflow, and local OTA deployment survive container recreation.
 
 ## Requirements
 
 - Docker Engine with Compose v2
 - Host storage for Android source and ccache
 - Public SSH key for every authorized operator
+- Host clone of [`Yim-s-Riced-ROM-Project/project`](https://github.com/Yim-s-Riced-ROM-Project/project)
+- Existing external Docker network `proxy-net`
 
 ## Configure
 
@@ -14,21 +16,15 @@ Persistent Debian-based Android and LineageOS build environment with key-only SS
 cp .env.example .env
 ```
 
-Replace `SSH_AUTHORIZED_KEYS` with a real public key. Set `SSH_BIND_ADDRESS` to a trusted LAN address when remote access is needed. Loopback remains the safe default.
+Set:
 
-Match `USER_UID` and `USER_GID` to owner of host workspace and ccache directories:
+- `SSH_AUTHORIZED_KEYS` to trusted public key.
+- `SSH_BIND_ADDRESS` to VPN/LAN address.
+- `USER_UID` and `USER_GID` to host storage owner.
+- `YRRP_PROJECT_PATH` to absolute host path of canonical project clone.
+- `OTA_PUBLIC_BASE_URL` to user-managed public HTTPS origin before signing releases.
 
-```bash
-id -u
-id -g
-```
-
-For multiple SSH keys, export one multiline value before startup:
-
-```bash
-export SSH_AUTHORIZED_KEYS="$(cat ~/.ssh/id_ed25519.pub)
-$(cat ~/.ssh/second_builder_key.pub)"
-```
+For multiple SSH keys, export one multiline value before startup.
 
 ## Start
 
@@ -45,35 +41,57 @@ Connect using configured address and port:
 ssh -p 4242 android@127.0.0.1
 ```
 
-Android source lives at `/opt/android`. Compiler cache lives at `/ccache`.
+Android source lives at `/opt/android`. Compiler cache lives at `/ccache`. Canonical release tooling is mounted read-only at `/opt/yrrp/project`.
+
+## Release signing and OTA deployment
+
+Run only canonical mounted script:
+
+```bash
+/opt/yrrp/project/scripts/sign-lineage-build.sh
+```
+
+Successful release-key signing automatically builds latest-only local OTA image and replaces labeled `yrrp-ota-server` on `proxy-net`. Deployment health failure restores previous healthy release.
+
+Signing requires valid `OTA_PUBLIC_BASE_URL`, reachable Docker daemon, public OTA base image, and existing `proxy-net`.
 
 ## Persistence and upgrades
 
-Compose bind mounts preserve source and ccache. Named volume `ssh-host-keys` preserves server identity.
-
-Before recreation, stop active builds and back up source changes, release keys, and any artifacts kept outside Git:
+Compose bind mounts preserve source and ccache. Named volume `ssh-host-keys` preserves server identity. Stop active builds before recreating builder.
 
 ```bash
-docker compose build --pull
+docker compose pull
 docker compose up -d
 docker compose ps
 ```
 
-Deleting `workspace/`, `ccache/`, or `ssh-host-keys` destroys corresponding persistent state.
+Local `docker compose up -d --build` remains supported for development.
 
 ## Security model
 
-This container is a trusted, single-tenant development host. SSH permits public-key authentication only and rewrites `authorized_keys` at every startup. User `android` has passwordless sudo inside container because Android build and maintenance workflows need administrative tools.
+Builder is trusted, single-tenant host reachable only through VPN. SSH uses public-key authentication and rewrites `authorized_keys` at startup. User `android` has passwordless sudo inside container.
 
-Do not expose SSH directly to public Internet. Restrict `SSH_BIND_ADDRESS` with host firewall or private network controls. Do not mount Docker socket into container. Keep `.env`, private keys, signing keys, source output, and build artifacts outside Git.
+Builder mounts `/var/run/docker.sock`. Docker socket access is equivalent to unrestricted root authority on TrueNAS host: any builder operator or compromised build can create privileged containers, mount host filesystems, read host data, and replace services. Read-only socket mounting would not remove this authority.
 
-Container starts `sshd` as root, then SSH sessions run as `android`. This differs from fully non-root container guidance because OpenSSH supervises port 22 and creates user sessions. Host isolation still depends on Docker daemon, default seccomp/AppArmor policy, and absence of privileged mounts.
+This accepted exception requires:
 
-Security references:
+- VPN-restricted, key-only SSH;
+- trusted operators and source;
+- socket mounted only into builder;
+- canonical project scripts mounted read-only;
+- OTA deployer refusing non-YRRP containers and images;
+- OTA serving container never receiving Docker socket.
 
-- [OWASP Docker Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html)
-- [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
+See [OWASP Docker Security Cheat Sheet Rule 1](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-1---do-not-expose-the-docker-daemon-socket-even-to-the-containers).
 
-## Scope
+Keep `.env`, private keys, signing keys, source output, target-files, and release artifacts outside Git and container image build contexts.
 
-Repository defines one persistent source/build container. Release-trigger workflows and latest-only OTA hosting belong in separate `ota_server` project.
+## Published image
+
+GitHub Actions publishes amd64 builder image:
+
+```text
+ghcr.io/yim-s-riced-rom-project/android-build-server:main
+```
+
+Pull requests build without publishing. Main, version tags, and manual runs publish SBOM/provenance-enabled images.

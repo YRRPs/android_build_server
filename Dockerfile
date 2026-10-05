@@ -1,4 +1,4 @@
-FROM debian:trixie
+FROM debian:trixie@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c
 
 ARG USER=android
 ARG USER_UID=1000
@@ -18,6 +18,9 @@ RUN apt-get update \
         ca-certificates \
         ccache \
         curl \
+        docker-buildx \
+        docker-cli \
+        docker-compose \
         e2fsprogs \
         erofs-utils \
         fastboot \
@@ -55,6 +58,7 @@ RUN apt-get update \
         squashfs-tools \
         sudo \
         unzip \
+        util-linux \
         xsltproc \
         xxd \
         zip \
