@@ -71,4 +71,5 @@ if [ ! -s "${host_key}" ]; then
 fi
 
 install -d -m 0755 -o root -g root /run/sshd
+install -d -m 0777 -o root -g utmp /run/screen
 exec "$@"

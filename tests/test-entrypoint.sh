@@ -50,6 +50,11 @@ for _ in $(seq 1 30); do
     sleep 1
 done
 docker exec "${container}" /usr/sbin/sshd -t
+test "$(docker exec "${container}" stat -c '%a:%U:%G' /run/screen)" = "777:root:utmp"
+if docker exec "${container}" screen -ls 2>&1 | grep -q 'Permission denied'; then
+    echo 'screen runtime directory is unusable' >&2
+    exit 1
+fi
 test "$(docker exec "${container}" id -u android)" = "${test_uid}"
 test "$(docker exec "${container}" id -g android)" = "${test_gid}"
 
