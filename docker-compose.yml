@@ -16,6 +16,8 @@ services:
       - "${SSH_BIND_ADDRESS:-127.0.0.1}:${SSH_PORT:-4242}:22"
     environment:
       SSH_AUTHORIZED_KEYS: ${SSH_AUTHORIZED_KEYS:?Set SSH_AUTHORIZED_KEYS before startup}
+      ANDROID_UID: ${USER_UID:-1000}
+      ANDROID_GID: ${USER_GID:-1000}
       CCACHE_DIR: /ccache
       CCACHE_MAXSIZE: ${CCACHE_MAXSIZE:-100G}
       CCACHE_NOCOMPRESS: "true"
@@ -27,6 +29,7 @@ services:
       - ${ANDROID_WORKSPACE_PATH:-./workspace}:/opt/android
       - ${CCACHE_PATH:-./ccache}:/ccache
       - ${YRRP_PROJECT_PATH:?Set YRRP_PROJECT_PATH}:/opt/yrrp/project:ro
+      - ${SIGNING_KEYS_PATH:-./signing}:/home/android/.android-certs
       - /var/run/docker.sock:/var/run/docker.sock
       - ssh-host-keys:/etc/ssh/host-keys
     tmpfs:

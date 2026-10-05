@@ -13,6 +13,28 @@ if [ -z "${SSH_AUTHORIZED_KEYS:-}" ]; then
     exit 64
 fi
 
+target_uid=${ANDROID_UID:-$(id -u "${user}")}
+target_gid=${ANDROID_GID:-$(id -g "${user}")}
+case ${target_uid}:${target_gid} in
+    *[!0-9:]*|:*|*:) echo "ANDROID_UID and ANDROID_GID must be numeric" >&2; exit 66 ;;
+esac
+
+current_gid=$(id -g "${user}")
+if [ "${current_gid}" != "${target_gid}" ]; then
+    target_group=$(getent group "${target_gid}" | cut -d: -f1 || true)
+    if [ -n "${target_group}" ]; then
+        usermod --gid "${target_group}" "${user}"
+    else
+        groupmod --gid "${target_gid}" "${group}"
+    fi
+fi
+current_uid=$(id -u "${user}")
+if [ "${current_uid}" != "${target_uid}" ]; then
+    usermod --uid "${target_uid}" "${user}"
+fi
+primary_group=$(id -gn "${user}")
+chown -R "${user}:${primary_group}" "/home/${user}"
+
 if [ -e "${docker_socket}" ]; then
     if [ ! -S "${docker_socket}" ]; then
         echo "${docker_socket} exists but is not a Unix socket" >&2
@@ -29,9 +51,9 @@ else
     echo "Warning: ${docker_socket} is absent; OTA deployment will be unavailable" >&2
 fi
 
-install -d -m 0700 -o "${user}" -g "${group}" "${ssh_dir}"
+install -d -m 0700 -o "${user}" -g "${primary_group}" "${ssh_dir}"
 printf '%s\n' "${SSH_AUTHORIZED_KEYS}" > "${authorized_keys}"
-chown "${user}:${group}" "${authorized_keys}"
+chown "${user}:${primary_group}" "${authorized_keys}"
 chmod 0600 "${authorized_keys}"
 
 install -d -m 0700 /etc/ssh/host-keys

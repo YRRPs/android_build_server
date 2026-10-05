@@ -1,6 +1,7 @@
 .env
 workspace/
 ccache/
+signing/
 *.log
 __pycache__/
 *.py[cod]

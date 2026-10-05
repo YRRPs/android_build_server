@@ -35,6 +35,7 @@ def test_compose_contract() -> None:
     volumes = {volume["target"]: volume for volume in builder["volumes"]}
     assert volumes["/var/run/docker.sock"]["source"] == "/var/run/docker.sock"
     assert volumes["/opt/yrrp/project"]["read_only"] is True
+    assert volumes["/home/android/.android-certs"].get("read_only", False) is False
     assert builder["environment"]["OTA_NETWORK"] == "proxy-net"
     assert builder["image"] == "ghcr.io/yim-s-riced-rom-project/android-build-server:main"
 

@@ -22,6 +22,7 @@ Set:
 - `SSH_BIND_ADDRESS` to VPN/LAN address.
 - `USER_UID` and `USER_GID` to host storage owner.
 - `YRRP_PROJECT_PATH` to absolute host path of canonical project clone.
+- `SIGNING_KEYS_PATH` to persistent host directory for decrypted signing key set.
 - `OTA_PUBLIC_BASE_URL` to user-managed public HTTPS origin before signing releases.
 
 For multiple SSH keys, export one multiline value before startup.
@@ -57,7 +58,9 @@ Signing requires valid `OTA_PUBLIC_BASE_URL`, reachable Docker daemon, public OT
 
 ## Persistence and upgrades
 
-Compose bind mounts preserve source and ccache. Named volume `ssh-host-keys` preserves server identity. Stop active builds before recreating builder.
+Compose bind mounts preserve source, ccache, canonical project tooling, and decrypted signing keys. Named volume `ssh-host-keys` preserves server identity. Stop active builds before recreating builder.
+
+Never keep only working signing-key copy in container writable layer. Back up encrypted archive separately and mount decrypted key directory through `SIGNING_KEYS_PATH`.
 
 ```bash
 docker compose pull
