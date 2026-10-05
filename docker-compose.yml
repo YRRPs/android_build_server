@@ -1,0 +1,37 @@
+name: ${COMPOSE_PROJECT_NAME:-android-build-server}
+
+services:
+  builder:
+    build:
+      context: .
+      args:
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+    container_name: ${CONTAINER_NAME:-android-builder}
+    hostname: ${CONTAINER_HOSTNAME:-android-builder}
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${SSH_BIND_ADDRESS:-127.0.0.1}:${SSH_PORT:-4242}:22"
+    environment:
+      SSH_AUTHORIZED_KEYS: ${SSH_AUTHORIZED_KEYS:?Set SSH_AUTHORIZED_KEYS before startup}
+      CCACHE_DIR: /ccache
+      CCACHE_MAXSIZE: ${CCACHE_MAXSIZE:-100G}
+      CCACHE_NOCOMPRESS: "true"
+      USE_CCACHE: "1"
+    volumes:
+      - ${ANDROID_WORKSPACE_PATH:-./workspace}:/opt/android
+      - ${CCACHE_PATH:-./ccache}:/ccache
+      - ssh-host-keys:/etc/ssh/host-keys
+    tmpfs:
+      - /run
+      - /tmp:exec,mode=1777
+    healthcheck:
+      test: ["CMD", "/usr/sbin/sshd", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  ssh-host-keys:

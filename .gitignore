@@ -1,0 +1,7 @@
+.env
+workspace/
+ccache/
+*.log
+.vscode/
+.idea/
+.DS_Store
