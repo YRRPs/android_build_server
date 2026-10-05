@@ -33,7 +33,16 @@ if [ "${current_uid}" != "${target_uid}" ]; then
     usermod --uid "${target_uid}" "${user}"
 fi
 primary_group=$(id -gn "${user}")
-chown -R "${user}:${primary_group}" "/home/${user}"
+chown "${user}:${primary_group}" "/home/${user}"
+
+signing_dir=${YRRP_CERT_DIR:-/opt/yrrp/signing}
+if [ -d "${signing_dir}" ]; then
+    signing_owner=$(stat -c '%u:%g' "${signing_dir}")
+    if [ "${signing_owner}" != "${target_uid}:${target_gid}" ]; then
+        echo "${signing_dir} must be owned by ${target_uid}:${target_gid}; found ${signing_owner}" >&2
+        exit 67
+    fi
+fi
 
 if [ -e "${docker_socket}" ]; then
     if [ ! -S "${docker_socket}" ]; then

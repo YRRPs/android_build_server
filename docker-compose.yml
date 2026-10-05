@@ -25,11 +25,12 @@ services:
       OTA_PUBLIC_BASE_URL: ${OTA_PUBLIC_BASE_URL:-}
       OTA_BASE_IMAGE_REF: ${OTA_BASE_IMAGE_REF:-ghcr.io/yim-s-riced-rom-project/ota-server:main}
       OTA_NETWORK: ${OTA_NETWORK:-proxy-net}
+      YRRP_CERT_DIR: /opt/yrrp/signing
     volumes:
       - ${ANDROID_WORKSPACE_PATH:-./workspace}:/opt/android
       - ${CCACHE_PATH:-./ccache}:/ccache
       - ${YRRP_PROJECT_PATH:?Set YRRP_PROJECT_PATH}:/opt/yrrp/project:ro
-      - ${SIGNING_KEYS_PATH:-./signing}:/home/android/.android-certs
+      - ${SIGNING_KEYS_PATH:-./signing}:/opt/yrrp/signing
       - /var/run/docker.sock:/var/run/docker.sock
       - ssh-host-keys:/etc/ssh/host-keys
     tmpfs:

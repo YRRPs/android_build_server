@@ -42,7 +42,7 @@ Connect using configured address and port:
 ssh -p 4242 android@127.0.0.1
 ```
 
-Android source lives at `/opt/android`. Compiler cache lives at `/ccache`. Canonical release tooling is mounted read-only at `/opt/yrrp/project`.
+Android source lives at `/opt/android`. Compiler cache lives at `/ccache`. Canonical release tooling is mounted read-only at `/opt/yrrp/project`. Persistent decrypted signing keys are mounted at `/opt/yrrp/signing` and must already match configured UID/GID.
 
 ## Release signing and OTA deployment
 
@@ -60,7 +60,7 @@ Signing requires valid `OTA_PUBLIC_BASE_URL`, reachable Docker daemon, public OT
 
 Compose bind mounts preserve source, ccache, canonical project tooling, and decrypted signing keys. Named volume `ssh-host-keys` preserves server identity. Stop active builds before recreating builder.
 
-Never keep only working signing-key copy in container writable layer. Back up encrypted archive separately and mount decrypted key directory through `SIGNING_KEYS_PATH`.
+Never keep only working signing-key copy in container writable layer. Back up encrypted archive separately and mount decrypted key directory through `SIGNING_KEYS_PATH`. Entrypoint validates ownership and never changes key ownership.
 
 ```bash
 docker compose pull

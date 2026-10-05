@@ -12,6 +12,8 @@ test_gid=1950
 signing_path=${scratch}/signing
 mkdir -p "${signing_path}"
 printf 'synthetic-key\n' > "${signing_path}/releasekey.pk8"
+docker run --rm -v "${signing_path}:/signing" alpine:3.22 \
+    chown -R "${test_uid}:${test_gid}" /signing >/dev/null
 
 if [ -z "${YRRP_TEST_PROJECT_PATH:-}" ]; then
     mkdir -p "${project_path}/scripts"
@@ -38,7 +40,7 @@ docker run -d \
     --tmpfs /tmp:exec,mode=1777 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${project_path}:/opt/yrrp/project:ro" \
-    -v "${signing_path}:/home/android/.android-certs" \
+    -v "${signing_path}:/opt/yrrp/signing" \
     "${image}" >/dev/null
 
 for _ in $(seq 1 30); do
@@ -58,8 +60,9 @@ docker exec "${container}" docker compose version >/dev/null
 socket_gid=$(docker exec "${container}" stat -c '%g' /var/run/docker.sock)
 docker exec "${container}" id -G android | tr ' ' '\n' | grep -qx "${socket_gid}"
 docker exec "${container}" test -x /opt/yrrp/project/scripts/sign-lineage-build.sh
-test "$(docker exec "${container}" stat -c '%u' /home/android/.android-certs/releasekey.pk8)" = "${test_uid}"
-docker exec "${container}" touch /home/android/.android-certs/.write-test
+test "$(docker exec "${container}" stat -c '%u:%g' /opt/yrrp/signing/releasekey.pk8)" = "${test_uid}:${test_gid}"
+docker exec "${container}" touch /opt/yrrp/signing/.write-test
+test "$(stat -c '%u:%g' "${signing_path}/releasekey.pk8")" = "${test_uid}:${test_gid}"
 if docker exec "${container}" touch /opt/yrrp/project/.write-test 2>/dev/null; then
     echo 'canonical project mount is writable' >&2
     exit 1
