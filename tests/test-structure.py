@@ -38,7 +38,7 @@ def test_compose_contract() -> None:
     assert volumes["/opt/yrrp/signing"].get("read_only", False) is False
     assert builder["environment"]["YRRP_CERT_DIR"] == "/opt/yrrp/signing"
     assert builder["environment"]["OTA_NETWORK"] == "proxy-net"
-    assert builder["image"] == "ghcr.io/yim-s-riced-rom-project/android-build-server:main"
+    assert builder["image"] == "ghcr.io/yrrps/android-build-server:main"
 
 
 def test_workflow_contract() -> None:

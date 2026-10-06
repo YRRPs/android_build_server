@@ -7,7 +7,7 @@ Persistent Debian-based Android and LineageOS build environment with key-only SS
 - Docker Engine with Compose v2
 - Host storage for Android source and ccache
 - Public SSH key for every authorized operator
-- Host clone of [`Yim-s-Riced-ROM-Project/project`](https://github.com/Yim-s-Riced-ROM-Project/project)
+- Host clone of [`YRRPs/project`](https://github.com/YRRPs/project)
 - Existing external Docker network `proxy-net`
 
 ## Configure
@@ -94,7 +94,7 @@ Keep `.env`, private keys, signing keys, source output, target-files, and releas
 GitHub Actions publishes amd64 builder image:
 
 ```text
-ghcr.io/yim-s-riced-rom-project/android-build-server:main
+ghcr.io/yrrps/android-build-server:main
 ```
 
 Pull requests build without publishing. Main, version tags, and manual runs publish SBOM/provenance-enabled images.

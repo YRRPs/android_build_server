@@ -12,7 +12,7 @@ on:
 permissions: {}
 
 env:
-  IMAGE_NAME: ghcr.io/yim-s-riced-rom-project/android-build-server
+  IMAGE_NAME: ghcr.io/yrrps/android-build-server
 
 jobs:
   validate:
